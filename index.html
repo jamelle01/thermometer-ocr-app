@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Thermometer OCR - Numbers Only</title>
+        <title>Thermometer OCR – Improved Accuracy</title>
         <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
         <style>
             body {
@@ -34,12 +34,12 @@
         </style>
     </head>
     <body>
-        <h2>OCR: Numbers Only</h2>
+        <h2>OCR (Numbers Only with Accuracy Boost)</h2>
         <video id="video" autoplay playsinline muted></video>
         <canvas
             id="canvas"
-            width="320"
-            height="240"
+            width="640"
+            height="480"
             style="display: none"
         ></canvas>
         <button id="captureBtn">Capture</button>
@@ -81,6 +81,30 @@
                 }
             }
 
+            function preprocessImage() {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                let imageData = ctx.getImageData(
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
+                );
+                let data = imageData.data;
+
+                // Convert to grayscale and apply simple threshold (binarize)
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i],
+                        g = data[i + 1],
+                        b = data[i + 2];
+                    const avg = (r + g + b) / 3;
+                    const threshold = 130; // adjust for better contrast if needed
+                    const bin = avg > threshold ? 255 : 0;
+                    data[i] = data[i + 1] = data[i + 2] = bin;
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+            }
+
             document
                 .getElementById("captureBtn")
                 .addEventListener("click", async () => {
@@ -89,8 +113,10 @@
                         return;
                     }
 
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                     statusText.textContent = "Processing image...";
+
+                    // Enhance image first
+                    preprocessImage();
 
                     try {
                         const result = await Tesseract.recognize(
@@ -98,13 +124,15 @@
                             "eng",
                             {
                                 logger: (m) => console.log(m),
+                                tessedit_char_whitelist: "0123456789.",
+                                tessedit_pageseg_mode:
+                                    Tesseract.PSM.SINGLE_LINE,
                             }
                         );
 
                         const rawText = result.data.text.trim();
                         console.log("Raw OCR Text:", rawText);
 
-                        // Extract all numbers (integers or decimals)
                         const numbersOnly = rawText.match(/[\d.]+/g) || [];
 
                         if (numbersOnly.length > 0) {
