@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Thermometer OCR - Full Text</title>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f0f0;
-      padding: 1em;
-    }
-    video, canvas {
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Thermometer OCR - Full Text</title>
+        <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: #f0f0f0;
+                padding: 1em;
+            }
+            /* video, canvas {
       width: 100%;
       max-width: 100%;
       border: 1px solid #ccc;
@@ -29,67 +29,86 @@
       margin-top: 20px;
       font-family: monospace;
       padding: 10px;
-    }
-  </style>
-</head>
-<body>
-  <h2>Image to Text (OCR)</h2>
-  <video id="video" autoplay playsinline muted></video>
-  <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
-  <button id="captureBtn">Capture</button>
-  <p id="status">Status: Initializing camera...</p>
-  <textarea id="output" placeholder="OCR result will appear here..." readonly></textarea>
+    } */
+        </style>
+    </head>
+    <body>
+        <h2>Image to Text (OCR)</h2>
+        <video id="video" autoplay playsinline muted></video>
+        <canvas
+            id="canvas"
+            width="320"
+            height="240"
+            style="display: none"
+        ></canvas>
+        <button id="captureBtn">Capture</button>
+        <p id="status">Status: Initializing camera...</p>
+        <textarea
+            id="output"
+            placeholder="OCR result will appear here..."
+            readonly
+        ></textarea>
 
-  <script>
-    const video = document.getElementById("video");
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
-    const output = document.getElementById("output");
-    const statusText = document.getElementById("status");
+        <script>
+            const video = document.getElementById("video");
+            const canvas = document.getElementById("canvas");
+            const ctx = canvas.getContext("2d");
+            const output = document.getElementById("output");
+            const statusText = document.getElementById("status");
 
-    async function initCamera() {
-      try {
-        const constraints = {
-          video: {
-            facingMode: { ideal: "environment" }
-          },
-          audio: false
-        };
+            async function initCamera() {
+                try {
+                    const constraints = {
+                        video: {
+                            facingMode: { ideal: "environment" },
+                        },
+                        audio: false,
+                    };
 
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = stream;
-        await video.play();
-        statusText.textContent = "Status: Camera ready. Tap Capture.";
-      } catch (err) {
-        console.error("Camera error:", err);
-        alert("Camera error: " + err.message);
-        statusText.textContent = "Camera access error: " + err.message;
-      }
-    }
+                    const stream = await navigator.mediaDevices.getUserMedia(
+                        constraints
+                    );
+                    video.srcObject = stream;
+                    await video.play();
+                    statusText.textContent =
+                        "Status: Camera ready. Tap Capture.";
+                } catch (err) {
+                    console.error("Camera error:", err);
+                    alert("Camera error: " + err.message);
+                    statusText.textContent =
+                        "Camera access error: " + err.message;
+                }
+            }
 
-    document.getElementById("captureBtn").addEventListener("click", async () => {
-      if (video.readyState !== 4) {
-        alert("Video stream not ready yet.");
-        return;
-      }
+            document
+                .getElementById("captureBtn")
+                .addEventListener("click", async () => {
+                    if (video.readyState !== 4) {
+                        alert("Video stream not ready yet.");
+                        return;
+                    }
 
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      statusText.textContent = "Processing image with OCR...";
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    statusText.textContent = "Processing image with OCR...";
 
-      try {
-        const result = await Tesseract.recognize(canvas, 'eng', {
-          logger: m => console.log(m)
-        });
-        output.value = result.data.text.trim();
-        statusText.textContent = "OCR complete.";
-      } catch (err) {
-        console.error("OCR error:", err);
-        alert("OCR failed: " + err.message);
-        statusText.textContent = "OCR error: " + err.message;
-      }
-    });
+                    try {
+                        const result = await Tesseract.recognize(
+                            canvas,
+                            "eng",
+                            {
+                                logger: (m) => console.log(m),
+                            }
+                        );
+                        output.value = result.data.text.trim();
+                        statusText.textContent = "OCR complete.";
+                    } catch (err) {
+                        console.error("OCR error:", err);
+                        alert("OCR failed: " + err.message);
+                        statusText.textContent = "OCR error: " + err.message;
+                    }
+                });
 
-    initCamera();
-  </script>
-</body>
+            initCamera();
+        </script>
+    </body>
 </html>
