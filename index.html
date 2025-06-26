@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thermometer OCR Logger</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+    video, canvas { max-width: 100%; border: 1px solid #ccc; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    button { padding: 10px 20px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Thermometer OCR Logger</h2>
+  <video id="video" autoplay playsinline width="320" height="240"></video><br>
+  <button onclick="captureImage()">Capture</button>
+  <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+  <p id="status">Status: Ready</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Temp In</th>
+        <th>Temp Out</th>
+        <th>RH</th>
+      </tr>
+    </thead>
+    <tbody id="dataTable">
+    </tbody>
+  </table>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusText = document.getElementById('status');
+
+    // Access camera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        alert('Camera access denied:', err);
+      });
+
+    function captureImage() {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      statusText.textContent = 'Status: Processing image...';
+
+      Tesseract.recognize(
+        canvas,
+        'eng',
+        { logger: m => console.log(m) }
+      ).then(({ data: { text } }) => {
+        statusText.textContent = 'Status: OCR complete';
+        console.log('OCR Text:', text);
+
+        const tempIn = (text.match(/Temp\s*In[:\s]*([0-9.]+)/i) || [])[1] || '';
+        const tempOut = (text.match(/Temp\s*Out[:\s]*([0-9.]+)/i) || [])[1] || '';
+        const rh = (text.match(/RH[:\s]*([0-9.]+)/i) || [])[1] || '';
+
+        const table = document.getElementById('dataTable');
+        const row = table.insertRow();
+        row.insertCell(0).textContent = new Date().toLocaleString();
+        row.insertCell(1).textContent = tempIn;
+        row.insertCell(2).textContent = tempOut;
+        row.insertCell(3).textContent = rh;
+      });
+    }
+  </script>
+</body>
+</html>
