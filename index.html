@@ -1,95 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Thermometer OCR - Full Text Output</title>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f4f4f4;
-    }
-    video, canvas {
-      max-width: 100%;
-      border: 1px solid #ccc;
-      margin-bottom: 10px;
-    }
-    button {
-      padding: 10px 20px;
-      margin-top: 10px;
-    }
-    textarea {
-      width: 100%;
-      height: 150px;
-      margin-top: 20px;
-      font-size: 1em;
-      font-family: monospace;
-      padding: 10px;
-    }
-  </style>
-</head>
-<body>
-  <h2>Thermometer OCR - Full Text Output</h2>
-  <video id="video" autoplay playsinline width="320" height="240"></video><br />
-  <button id="captureBtn" disabled>Capture</button>
-  <canvas id="canvas" width="320" height="240" style="display:none"></canvas>
-  <p id="status">Status: Initializing camera...</p>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>OCR Test</title>
+        <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: #f0f0f0;
+                padding: 1em;
+            }
+            video,
+            canvas {
+                width: 100%;
+                max-width: 100%;
+                border: 1px solid #ccc;
+            }
+            button {
+                padding: 10px;
+                margin-top: 10px;
+                width: 100%;
+            }
+            textarea {
+                width: 100%;
+                height: 150px;
+                margin-top: 20px;
+                font-family: monospace;
+                padding: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Image to Text (OCR)</h2>
+        <video id="video" autoplay playsinline></video>
+        <canvas
+            id="canvas"
+            width="320"
+            height="240"
+            style="display: none"
+        ></canvas>
+        <button id="captureBtn">Capture</button>
+        <p id="status">Status: Initializing camera...</p>
+        <textarea
+            id="output"
+            placeholder="OCR result will appear here..."
+            readonly
+        ></textarea>
 
-  <textarea id="fullText" placeholder="OCR result will appear here..." readonly></textarea>
+        <script>
+            const video = document.getElementById("video");
+            const canvas = document.getElementById("canvas");
+            const ctx = canvas.getContext("2d");
+            const output = document.getElementById("output");
+            const statusText = document.getElementById("status");
 
-  <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const statusText = document.getElementById('status');
-    const captureBtn = document.getElementById('captureBtn');
-    const fullTextArea = document.getElementById('fullText');
+            // Initialize camera
+            navigator.mediaDevices
+                .getUserMedia({ video: { facingMode: "environment" } })
+                .then((stream) => {
+                    video.srcObject = stream;
+                    statusText.textContent =
+                        "Status: Camera ready. Tap capture.";
+                })
+                .catch((err) => {
+                    statusText.textContent =
+                        "Error accessing camera: " + err.message;
+                    console.error(err);
+                });
 
-    async function initCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } }
-        });
-        video.srcObject = stream;
-
-        video.onloadedmetadata = () => {
-          video.play();
-          statusText.textContent = "Status: Camera ready";
-          captureBtn.disabled = false;
-        };
-      } catch (err) {
-        statusText.textContent = "Status: Camera access denied or unavailable";
-        alert("Camera error: " + err.message);
-        console.error(err);
-      }
-    }
-
-    captureBtn.addEventListener('click', async () => {
-      if (video.readyState !== 4) {
-        alert("Video stream not ready yet. Please wait.");
-        return;
-      }
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      statusText.textContent = "Status: Processing image...";
-
-      try {
-        const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
-          logger: m => console.log(m),
-        });
-
-        statusText.textContent = "Status: OCR complete";
-        console.log("OCR Text:", text);
-
-        fullTextArea.value = text.trim();
-      } catch (error) {
-        statusText.textContent = "Status: OCR failed - " + error.message;
-        console.error(error);
-      }
-    });
-
-    initCamera();
-  </script>
-</body>
+            document
+                .getElementById("captureBtn")
+                .addEventListener("click", async () => {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    statusText.textContent = "Processing image with OCR...";
+                    try {
+                        const result = await Tesseract.recognize(
+                            canvas,
+                            "eng",
+                            {
+                                logger: (m) => console.log(m),
+                            }
+                        );
+                        output.value = result.data.text.trim();
+                        statusText.textContent = "OCR complete";
+                    } catch (err) {
+                        statusText.textContent = "OCR failed: " + err.message;
+                        console.error(err);
+                    }
+                });
+        </script>
+    </body>
 </html>
