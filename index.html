@@ -36,15 +36,9 @@
     </head>
     <body>
         <h2>Thermometer OCR Logger</h2>
-        <video id="video" autoplay playsinline width="320" height="240"></video
-        ><br />
+        <video id="video" autoplay playsinline width="320" height="240"></video><br />
         <button onclick="captureImage()">Capture</button>
-        <canvas
-            id="canvas"
-            width="320"
-            height="240"
-            style="display: none"
-        ></canvas>
+        <canvas id="canvas" width="320" height="240" style="display: none"></canvas>
         <p id="status">Status: Ready</p>
 
         <table>
@@ -65,16 +59,16 @@
             const ctx = canvas.getContext("2d");
             const statusText = document.getElementById("status");
 
-            // Access back camera (rear-facing)
+            // Access back camera (rear-facing), fallback if exact not available
             navigator.mediaDevices
                 .getUserMedia({
-                    video: { facingMode: { exact: "environment" } },
+                    video: { facingMode: "environment" },
                 })
                 .then((stream) => {
                     video.srcObject = stream;
                 })
                 .catch((err) => {
-                    alert("Camera access denied: " + err.message);
+                    alert("Camera access denied or not found: " + err.message);
                 });
 
             function captureImage() {
@@ -87,14 +81,15 @@
                     statusText.textContent = "Status: OCR complete";
                     console.log("OCR Text:", text);
 
-                    const tempIn =
-                        (text.match(/Temp\s*In[:\s]*([0-9.]+)/i) || [])[1] ||
-                        "";
-                    const tempOut =
-                        (text.match(/Temp\s*Out[:\s]*([0-9.]+)/i) || [])[1] ||
-                        "";
-                    const rh =
-                        (text.match(/RH[:\s]*([0-9.]+)/i) || [])[1] || "";
+                    const cleanText = text.trim();
+
+                    const tempInMatch = cleanText.match(/Temp\s*In[:\s]*([0-9.]+)/i);
+                    const tempOutMatch = cleanText.match(/Temp\s*Out[:\s]*([0-9.]+)/i);
+                    const rhMatch = cleanText.match(/RH[:\s]*([0-9.]+)/i);
+
+                    const tempIn = tempInMatch ? tempInMatch[1] : "";
+                    const tempOut = tempOutMatch ? tempOutMatch[1] : "";
+                    const rh = rhMatch ? rhMatch[1] : "";
 
                     const table = document.getElementById("dataTable");
                     const row = table.insertRow();
@@ -102,6 +97,9 @@
                     row.insertCell(1).textContent = tempIn;
                     row.insertCell(2).textContent = tempOut;
                     row.insertCell(3).textContent = rh;
+                }).catch(err => {
+                    statusText.textContent = "Status: OCR failed - " + err.message;
+                    console.error(err);
                 });
             }
         </script>
