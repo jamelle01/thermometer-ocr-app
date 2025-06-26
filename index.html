@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Thermometer OCR - Full Text</title>
+        <title>Thermometer OCR - Numbers Only</title>
         <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
         <style>
             body {
@@ -34,7 +34,7 @@
         </style>
     </head>
     <body>
-        <h2>Image to Text (OCR)</h2>
+        <h2>OCR: Numbers Only</h2>
         <video id="video" autoplay playsinline muted></video>
         <canvas
             id="canvas"
@@ -46,7 +46,7 @@
         <p id="status">Status: Initializing camera...</p>
         <textarea
             id="output"
-            placeholder="OCR result will appear here..."
+            placeholder="Numbers will appear here..."
             readonly
         ></textarea>
 
@@ -90,7 +90,7 @@
                     }
 
                     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    statusText.textContent = "Processing image with OCR...";
+                    statusText.textContent = "Processing image...";
 
                     try {
                         const result = await Tesseract.recognize(
@@ -100,8 +100,21 @@
                                 logger: (m) => console.log(m),
                             }
                         );
-                        output.value = result.data.text.trim();
-                        statusText.textContent = "OCR complete.";
+
+                        const rawText = result.data.text.trim();
+                        console.log("Raw OCR Text:", rawText);
+
+                        // Extract all numbers (integers or decimals)
+                        const numbersOnly = rawText.match(/[\d.]+/g) || [];
+
+                        if (numbersOnly.length > 0) {
+                            output.value = numbersOnly.join(", ");
+                            statusText.textContent = "Done! Numbers extracted.";
+                        } else {
+                            output.value = "No numbers found.";
+                            statusText.textContent =
+                                "Done. No numbers detected.";
+                        }
                     } catch (err) {
                         console.error("OCR error:", err);
                         alert("OCR failed: " + err.message);
