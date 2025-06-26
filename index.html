@@ -1,127 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Thermometer OCR Logger</title>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background: #f4f4f4;
-        }
-        video,
-        canvas {
-            max-width: 100%;
-            border: 1px solid #ccc;
-            margin-bottom: 10px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th,
-        td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: center;
-        }
-        button {
-            padding: 10px 20px;
-            margin-top: 10px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thermometer OCR Simple</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+    video, canvas {
+      max-width: 100%;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+    }
+    #results {
+      margin-top: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-    <h2>Thermometer OCR Logger</h2>
-    <video id="video" autoplay playsinline width="320" height="240"></video><br />
-    <button id="captureBtn" disabled>Capture</button>
-    <canvas id="canvas" width="320" height="240" style="display:none"></canvas>
-    <p id="status">Status: Initializing camera...</p>
+  <h2>Thermometer OCR Simple</h2>
+  <video id="video" autoplay playsinline width="320" height="240"></video><br />
+  <button id="captureBtn" disabled>Capture</button>
+  <canvas id="canvas" width="320" height="240" style="display:none"></canvas>
+  <p id="status">Status: Initializing camera...</p>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Timestamp</th>
-                <th>Temp In</th>
-                <th>Temp Out</th>
-                <th>RH</th>
-            </tr>
-        </thead>
-        <tbody id="dataTable"></tbody>
-    </table>
+  <div id="results">No data yet</div>
 
-    <script>
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const statusText = document.getElementById('status');
-        const captureBtn = document.getElementById('captureBtn');
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusText = document.getElementById('status');
+    const captureBtn = document.getElementById('captureBtn');
+    const resultsDiv = document.getElementById('results');
 
-        async function initCamera() {
-            try {
-                // Try to get environment facing camera, fallback if necessary
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { ideal: "environment" } },
-                });
-                video.srcObject = stream;
+    async function initCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } }
+        });
+        video.srcObject = stream;
 
-                video.onloadedmetadata = () => {
-                    video.play();
-                    statusText.textContent = "Status: Camera ready";
-                    captureBtn.disabled = false;
-                };
-            } catch (err) {
-                statusText.textContent = "Status: Camera access denied or unavailable";
-                alert("Camera error: " + err.message);
-                console.error(err);
-            }
-        }
+        video.onloadedmetadata = () => {
+          video.play();
+          statusText.textContent = "Status: Camera ready";
+          captureBtn.disabled = false;
+        };
+      } catch (err) {
+        statusText.textContent = "Status: Camera access denied or unavailable";
+        alert("Camera error: " + err.message);
+        console.error(err);
+      }
+    }
 
-        captureBtn.addEventListener('click', async () => {
-            if (video.readyState !== 4) { // HAVE_ENOUGH_DATA
-                alert("Video stream not ready yet. Please wait.");
-                return;
-            }
+    captureBtn.addEventListener('click', async () => {
+      if (video.readyState !== 4) {
+        alert("Video stream not ready yet. Please wait.");
+        return;
+      }
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      statusText.textContent = "Status: Processing image...";
 
-            // Draw current frame from video to canvas
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            statusText.textContent = "Status: Processing image...";
-            try {
-                const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
-                    logger: m => console.log(m),
-                });
-
-                statusText.textContent = "Status: OCR complete";
-                console.log("OCR Text:", text);
-
-                const cleanText = text.trim();
-
-                const tempInMatch = cleanText.match(/Temp\s*In[:\s]*([0-9.]+)/i);
-                const tempOutMatch = cleanText.match(/Temp\s*Out[:\s]*([0-9.]+)/i);
-                const rhMatch = cleanText.match(/RH[:\s]*([0-9.]+)/i);
-
-                const tempIn = tempInMatch ? tempInMatch[1] : "";
-                const tempOut = tempOutMatch ? tempOutMatch[1] : "";
-                const rh = rhMatch ? rhMatch[1] : "";
-
-                const table = document.getElementById("dataTable");
-                const row = table.insertRow();
-                row.insertCell(0).textContent = new Date().toLocaleString();
-                row.insertCell(1).textContent = tempIn;
-                row.insertCell(2).textContent = tempOut;
-                row.insertCell(3).textContent = rh;
-            } catch (error) {
-                statusText.textContent = "Status: OCR failed - " + error.message;
-                console.error(error);
-            }
+      try {
+        const { data: { text } } = await Tesseract.recognize(canvas, 'eng', {
+          logger: m => console.log(m),
         });
 
-        // Initialize camera on page load
-        initCamera();
-    </script>
+        statusText.textContent = "Status: OCR complete";
+        console.log("OCR Text:", text);
+
+        const cleanText = text.trim();
+
+        const tempInMatch = cleanText.match(/Temp\s*In[:\s]*([0-9.]+)/i);
+        const tempOutMatch = cleanText.match(/Temp\s*Out[:\s]*([0-9.]+)/i);
+        const rhMatch = cleanText.match(/RH[:\s]*([0-9.]+)/i);
+
+        const tempIn = tempInMatch ? tempInMatch[1] : "N/A";
+        const tempOut = tempOutMatch ? tempOutMatch[1] : "N/A";
+        const rh = rhMatch ? rhMatch[1] : "N/A";
+
+        resultsDiv.innerHTML = `
+          Temp In: ${tempIn}<br/>
+          Temp Out: ${tempOut}<br/>
+          RH: ${rh}
+        `;
+      } catch (error) {
+        statusText.textContent = "Status: OCR failed - " + error.message;
+        console.error(error);
+      }
+    });
+
+    initCamera();
+  </script>
 </body>
 </html>
