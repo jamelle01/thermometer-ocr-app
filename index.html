@@ -2,93 +2,10 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>OCR Test</title>
-        <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                background: #f0f0f0;
-                padding: 1em;
-            }
-            video,
-            canvas {
-                width: 100%;
-                max-width: 100%;
-                border: 1px solid #ccc;
-            }
-            button {
-                padding: 10px;
-                margin-top: 10px;
-                width: 100%;
-            }
-            textarea {
-                width: 100%;
-                height: 150px;
-                margin-top: 20px;
-                font-family: monospace;
-                padding: 10px;
-            }
-        </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
     </head>
     <body>
-        <h2>Image to Text (OCR)</h2>
-        <video id="video" autoplay playsinline></video>
-        <canvas
-            id="canvas"
-            width="320"
-            height="240"
-            style="display: none"
-        ></canvas>
-        <button id="captureBtn">Capture</button>
-        <p id="status">Status: Initializing camera...</p>
-        <textarea
-            id="output"
-            placeholder="OCR result will appear here..."
-            readonly
-        ></textarea>
-
-        <script>
-            const video = document.getElementById("video");
-            const canvas = document.getElementById("canvas");
-            const ctx = canvas.getContext("2d");
-            const output = document.getElementById("output");
-            const statusText = document.getElementById("status");
-
-            // Initialize camera
-            navigator.mediaDevices
-                .getUserMedia({ video: { facingMode: "environment" } })
-                .then((stream) => {
-                    video.srcObject = stream;
-                    statusText.textContent =
-                        "Status: Camera ready. Tap capture.";
-                })
-                .catch((err) => {
-                    statusText.textContent =
-                        "Error accessing camera: " + err.message;
-                    console.error(err);
-                });
-
-            document
-                .getElementById("captureBtn")
-                .addEventListener("click", async () => {
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    statusText.textContent = "Processing image with OCR...";
-                    try {
-                        const result = await Tesseract.recognize(
-                            canvas,
-                            "eng",
-                            {
-                                logger: (m) => console.log(m),
-                            }
-                        );
-                        output.value = result.data.text.trim();
-                        statusText.textContent = "OCR complete";
-                    } catch (err) {
-                        statusText.textContent = "OCR failed: " + err.message;
-                        console.error(err);
-                    }
-                });
-        </script>
+        helloo
     </body>
 </html>
