@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Thermometer OCR Simple</title>
+  <title>Thermometer OCR - Full Text Output</title>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
   <style>
     body {
@@ -20,21 +20,24 @@
       padding: 10px 20px;
       margin-top: 10px;
     }
-    #results {
+    textarea {
+      width: 100%;
+      height: 150px;
       margin-top: 20px;
-      font-size: 1.2em;
-      font-weight: bold;
+      font-size: 1em;
+      font-family: monospace;
+      padding: 10px;
     }
   </style>
 </head>
 <body>
-  <h2>Thermometer OCR Simple</h2>
+  <h2>Thermometer OCR - Full Text Output</h2>
   <video id="video" autoplay playsinline width="320" height="240"></video><br />
   <button id="captureBtn" disabled>Capture</button>
   <canvas id="canvas" width="320" height="240" style="display:none"></canvas>
   <p id="status">Status: Initializing camera...</p>
 
-  <div id="results">No data yet</div>
+  <textarea id="fullText" placeholder="OCR result will appear here..." readonly></textarea>
 
   <script>
     const video = document.getElementById('video');
@@ -42,7 +45,7 @@
     const ctx = canvas.getContext('2d');
     const statusText = document.getElementById('status');
     const captureBtn = document.getElementById('captureBtn');
-    const resultsDiv = document.getElementById('results');
+    const fullTextArea = document.getElementById('fullText');
 
     async function initCamera() {
       try {
@@ -79,21 +82,7 @@
         statusText.textContent = "Status: OCR complete";
         console.log("OCR Text:", text);
 
-        const cleanText = text.trim();
-
-        const tempInMatch = cleanText.match(/Temp\s*In[:\s]*([0-9.]+)/i);
-        const tempOutMatch = cleanText.match(/Temp\s*Out[:\s]*([0-9.]+)/i);
-        const rhMatch = cleanText.match(/RH[:\s]*([0-9.]+)/i);
-
-        const tempIn = tempInMatch ? tempInMatch[1] : "N/A";
-        const tempOut = tempOutMatch ? tempOutMatch[1] : "N/A";
-        const rh = rhMatch ? rhMatch[1] : "N/A";
-
-        resultsDiv.innerHTML = `
-          Temp In: ${tempIn}<br/>
-          Temp Out: ${tempOut}<br/>
-          RH: ${rh}
-        `;
+        fullTextArea.value = text.trim();
       } catch (error) {
         statusText.textContent = "Status: OCR failed - " + error.message;
         console.error(error);
