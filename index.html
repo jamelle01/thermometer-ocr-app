@@ -42,7 +42,7 @@
     // Access camera
     navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => {
-        video.srcObject = stream;
+        video: { facingMode: 'environment' }
       })
       .catch(err => {
         alert('Camera access denied:', err);
