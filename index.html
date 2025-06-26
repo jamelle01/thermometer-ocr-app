@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Thermometer OCR – Improved Accuracy</title>
+        <title>Thermometer OCR – One Number per Line</title>
         <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
         <style>
             body {
@@ -30,11 +30,12 @@
                 margin-top: 20px;
                 font-family: monospace;
                 padding: 10px;
+                font-size: 1.1em;
             }
         </style>
     </head>
     <body>
-        <h2>OCR (Numbers Only with Accuracy Boost)</h2>
+        <h2>Thermometer OCR – Clean Numbers</h2>
         <video id="video" autoplay playsinline muted></video>
         <canvas
             id="canvas"
@@ -46,7 +47,7 @@
         <p id="status">Status: Initializing camera...</p>
         <textarea
             id="output"
-            placeholder="Numbers will appear here..."
+            placeholder="Numbers will appear here, one per line..."
             readonly
         ></textarea>
 
@@ -59,16 +60,10 @@
 
             async function initCamera() {
                 try {
-                    const constraints = {
-                        video: {
-                            facingMode: { ideal: "environment" },
-                        },
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: "environment" } },
                         audio: false,
-                    };
-
-                    const stream = await navigator.mediaDevices.getUserMedia(
-                        constraints
-                    );
+                    });
                     video.srcObject = stream;
                     await video.play();
                     statusText.textContent =
@@ -91,14 +86,10 @@
                 );
                 let data = imageData.data;
 
-                // Convert to grayscale and apply simple threshold (binarize)
+                // Convert to grayscale and binarize
                 for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i],
-                        g = data[i + 1],
-                        b = data[i + 2];
-                    const avg = (r + g + b) / 3;
-                    const threshold = 130; // adjust for better contrast if needed
-                    const bin = avg > threshold ? 255 : 0;
+                    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                    const bin = avg > 130 ? 255 : 0;
                     data[i] = data[i + 1] = data[i + 2] = bin;
                 }
 
@@ -109,13 +100,11 @@
                 .getElementById("captureBtn")
                 .addEventListener("click", async () => {
                     if (video.readyState !== 4) {
-                        alert("Video stream not ready yet.");
+                        alert("Video not ready.");
                         return;
                     }
 
-                    statusText.textContent = "Processing image...";
-
-                    // Enhance image first
+                    statusText.textContent = "Processing...";
                     preprocessImage();
 
                     try {
@@ -131,13 +120,11 @@
                         );
 
                         const rawText = result.data.text.trim();
-                        console.log("Raw OCR Text:", rawText);
-
                         const numbersOnly = rawText.match(/[\d.]+/g) || [];
 
                         if (numbersOnly.length > 0) {
-                            output.value = numbersOnly.join(", ");
-                            statusText.textContent = "Done! Numbers extracted.";
+                            output.value = numbersOnly.join("\n"); // ← ONE NUMBER PER LINE
+                            statusText.textContent = "Done.";
                         } else {
                             output.value = "No numbers found.";
                             statusText.textContent =
